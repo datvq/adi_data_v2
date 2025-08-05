@@ -1,0 +1,138 @@
+{
+  "_app_import": {
+    "prefix": "_app_import",
+    "description": "_app_import",
+    "body": [
+      "# import",
+      "import os",
+      "import calendar",
+      "import requests",
+      "import polars as pl",
+      "import lib.dx as dx",
+      "import app.shared as shared",
+      "from datetime import date, datetime, timedelta",
+      "",
+      "dx.reload(shared)"
+    ]
+  },
+  "_app_default": {
+    "prefix": "_app_default",
+    "description": "_app_default",
+    "body": [
+      "# default",
+      "def output_file_default() -> str:",
+      "  return os.path.join(shared.env.data_dir, \"staged\", \"bravo\", \"fact_sales.parquet\")",
+      "",
+      "def B20Customer() -> pl.LazyFrame:",
+      "  return dx.df.scan_data_file(os.path.join(shared.env.data_dir, \"raw\", \"bravo\", \"tables\", \"B20Customer.parquet\"))",
+      "",
+      "def from_date_default() -> str:",
+      "  return \"2021-10-01\"",
+      "",
+      "def to_date_default() -> str:",
+      "  return dx.dt.resolve_datetime_string(\"end_of_next_fiscal_year\", ffmonth=10)",
+      "",
+      "def view_date_default() -> str:",
+      "  return dx.dt.resolve_datetime_string(\"tomorrow\")",
+      "",
+      "def stable_date_default() -> str:",
+      "  return dx.dt.datetime_to_string(dx.dt.end_of_month(date.today(), offset_days=-55), f\"%Y-%m-%d\")"
+    ]
+  },
+  "_app_params": {
+    "prefix": "_app_params",
+    "description": "_app_params",
+    "body": [
+      "# params",
+      "B20Customer: pl.LazyFrame = B20Customer()",
+      "",
+      "from_date: str = from_date_default()",
+      "to_date: str = to_date_default()"
+    ]
+  },
+  "_app_return": {
+    "prefix": "_app_return",
+    "description": "_app_return",
+    "body": ["# return", "df_fact_sales: pl.LazyFrame"]
+  },
+  "_app_context": {
+    "prefix": "_app_context",
+    "description": "_app_context",
+    "body": [
+      "# context",
+      "ctx: pl.SQLContext = pl.SQLContext()",
+      "",
+      "ctx.register(\"B20Customer\", B20Customer)",
+      "",
+      "ctx.tables()"
+    ]
+  },
+  "_app_read_context": {
+    "prefix": "_app_read_context",
+    "description": "_app_read_context",
+    "body": [
+      "# transform",
+      "query_sample = \"\"\"",
+      "select",
+      "  not customer.IsActive is_deleted,",
+      "  customer.Code customer_code,",
+      "  customer.Name customer_name,",
+      "  customer.ModifiedAt + interval '7 hours' modified_at,",
+      "from Customer customer",
+      "where customer.IsGroup = 0",
+      "\"\"\"",
+      "df_sample = ctx.execute(query=query_sample, eager=False)"
+    ]
+  },
+  "_app_read_mssql": {
+    "prefix": "_app_read_mssql",
+    "description": "_app_read_mssql",
+    "body": [
+      "query_sample = \"\"\"",
+      "declare @view_date nvarchar(10) = convert(nchar(10), getdate(), 23);",
+      "--[QUERY]--",
+      "set nocount on;",
+      "set ansi_warnings off;",
+      "execute InventoryReport",
+      "  @ViewDate = @view_date,",
+      "\"\"\"",
+      "df_sample = dx.ms.read_mssql(uri=shared.env.bravo_uri, query=query_sample, params={",
+      "  \"view_date\": view_date,",
+      "})"
+    ]
+  },
+  "_app_read_gsheet": {
+    "prefix": "_app_read_gsheet",
+    "description": "_app_read_gsheet",
+    "body": [
+      "gc = dx.gs.create_google_service(credentials_file=\"credentials.json\", credentials_directory=\".\")",
+      "wb = gc.open_by_url(url=\"https://docs.google.com/spreadsheets/d/1MDyQNkjC8G4TDqQL-D5f77w6C2-xiT93U8wwBBfVhM4\")",
+      "ws = wb.get_worksheet_by_id(id=\"1387188953\")",
+      "df_pull = pl.from_pandas(dx.gs.read_gsheet(worksheet=ws, first_col=1, first_row=1))"
+    ]
+  },
+  "_app_write_gsheet": {
+    "prefix": "_app_write_gsheet",
+    "description": "_app_write_gsheet",
+    "body": [
+      "gc = dx.gs.create_google_service(credentials_file=\"credentials.json\", credentials_directory=\".\")",
+      "wb = gc.open_by_url(url=\"https://docs.google.com/spreadsheets/d/1MDyQNkjC8G4TDqQL-D5f77w6C2-xiT93U8wwBBfVhM4\")",
+      "dx.gs.write_gsheet(",
+      "  dataframe=df_push.to_pandas(),",
+      "  worksheet=wb.worksheet(\"dmkh_new\"),",
+      "  first_col=1,",
+      "  first_row=10,",
+      "  clone_sheet_name=None,",
+      "  clear_ranges=[\"A10:G\"],",
+      ")"
+    ]
+  },
+  "_app_load": {
+    "prefix": "_app_load",
+    "description": "_app_load",
+    "body": [
+      "# save",
+      "dx.df.write_data_file(df=df_sample.collect(), data_file=output_file_default())"
+    ]
+  }
+}

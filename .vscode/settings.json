@@ -1,0 +1,17 @@
+{
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/venv/Lib/site-packages",
+    "${workspaceFolder}/venv/lib/python3.11/site-packages",
+    "${env:HOME}/AppData/Roaming/Python/Python311/site-packages",
+    "${env:HOME}/.pyenv/versions/3.11.9/lib/python3.11/site-packages",
+    "${env:HOME}/.pyenv/versions/3.11.9/lib/python3.11/lib-dynload",
+    "${env:HOME}/.pyenv/versions/3.11.9/lib/python3.11"
+  ],
+  "files.exclude": {
+    "*.7z": true,
+    "venv": true,
+    "dim_*.py": true,
+    "fact_*.py": true,
+    "flat_*.py": true
+  }
+}

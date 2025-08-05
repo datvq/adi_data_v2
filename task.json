@@ -1,0 +1,14 @@
+[
+  {
+    "task_folder": "/pytasks/playground",
+    "task_name": "adi_data_v2__model_sales",
+    "working_dir": "$PWD",
+    "target_file": "$PWD/app/main.py",
+    "target_args": "\"model_sales\"",
+    "is_hidden": true,
+    "run_when_register": false,
+    "interval_minutes": 120,
+    "start_offset_minutes": 420,
+    "loop_in_minutes": 1440000
+  }
+]

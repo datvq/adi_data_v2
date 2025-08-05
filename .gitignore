@@ -1,0 +1,16 @@
+**/.git
+**/.pytest_cache
+**/.ipynb_checkpoints
+**/__pycache__
+**/.DS_Store
+
+.env
+credentials.json
+
+venv
+data
+logs
+
+docker
+lib
+tool
